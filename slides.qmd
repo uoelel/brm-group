@@ -1,0 +1,65 @@
+---
+title: "Group-level effects in brms"
+author: "Stefano Coretta"
+format: revealjs
+---
+
+```{r}
+#| label: setup
+
+library(tidyverse)
+library(brms)
+my_seed <- 8293
+```
+
+```{r}
+duration <- read_csv("data/coretta2018/token-measures.csv") |> 
+  rename(
+    c2_voicing = c2_phonation
+  ) |> 
+  mutate(
+    c2_voicing = factor(c2_voicing, levels = c("voiceless", "voiced")),
+    vowel = factor(vowel, levels = c("a", "o", "u")),
+    c2_place = factor(c2_place, levels = c("coronal", "velar"))
+  ) |> 
+  drop_na(v1_duration)
+```
+
+```{r}
+duration |> 
+  ggplot(aes(c2_voicing, v1_duration)) +
+  geom_violin(width = 0.5) +
+  geom_jitter(alpha = 0.2, width = 0.1) +
+  stat_summary(geom = "point", fun = median, colour = "orange", size = 3) +
+  facet_grid(cols = vars(language))
+```
+
+```{r}
+duration |> 
+  ggplot(aes(c2_voicing, v1_duration)) +
+  geom_violin(width = 0.5) +
+  geom_jitter(alpha = 0.2, width = 0.1) +
+  stat_summary(geom = "point", fun = median, colour = "orange", size = 3) +
+  facet_grid(cols = vars(language), rows = vars(vowel))
+```
+
+```{r}
+vdur_1 <- brm(
+  v2_duration ~
+    c2_voicing * vowel * language,
+  data = duration,
+  family = lognormal,
+  seed = my_seed,
+  cores = 4,
+  file = "data/cache/vdur_1"
+)
+```
+
+
+```{r}
+duration |> 
+  ggplot(aes("", v1_duration)) +
+  geom_jitter(alpha = 0.2, width = 0.1) +
+  facet_wrap(vars(speaker), ncol = 6)
+```
+
