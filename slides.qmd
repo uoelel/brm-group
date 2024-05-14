@@ -45,7 +45,7 @@ duration |>
 
 ```{r}
 vdur_1 <- brm(
-  v2_duration ~
+  v1_duration ~
     c2_voicing * vowel * language,
   data = duration,
   family = lognormal,
@@ -53,6 +53,14 @@ vdur_1 <- brm(
   cores = 4,
   file = "data/cache/vdur_1"
 )
+```
+
+```{r}
+summary(vdur_1, prob = 0.9)
+```
+
+```{r}
+conditional_effects(vdur_1, "vowel:c2_voicing", conditions = make_conditions(vdur_1, "language"))
 ```
 
 
@@ -63,3 +71,47 @@ duration |>
   facet_wrap(vars(speaker), ncol = 6)
 ```
 
+```{r}
+vdur_2 <- brm(
+  v1_duration ~
+    c2_voicing * vowel * language +
+    (1 | speaker),
+  data = duration,
+  family = lognormal,
+  seed = my_seed,
+  cores = 4,
+  file = "data/cache/vdur_2"
+)
+```
+
+```{r}
+summary(vdur_2, prob = 0.9)
+```
+
+```{r}
+conditional_effects(vdur_2, "vowel:c2_voicing", conditions = make_conditions(vdur_1, "language"))
+```
+
+```{r}
+duration |> 
+  ggplot(aes(c2_voicing, v1_duration)) +
+  geom_jitter(alpha = 0.2, width = 0.1) +
+  facet_wrap(vars(speaker), ncol = 6)
+```
+
+```{r}
+vdur_3 <- brm(
+  v1_duration ~
+    c2_voicing * vowel * language +
+    (c2_voicing * vowel | speaker),
+  data = duration,
+  family = lognormal,
+  seed = my_seed,
+  cores = 4,
+  file = "data/cache/vdur_3"
+)
+```
+
+```{r}
+conditional_effects(vdur_3, "vowel:c2_voicing", conditions = make_conditions(vdur_1, "language"))
+```
