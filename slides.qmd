@@ -1,7 +1,13 @@
 ---
-title: "Group-level effects in brms"
-author: "Stefano Coretta"
-format: revealjs
+title: "Including group-level effects in brms"
+author: "Dr Stefano Coretta"
+institute: "University of Edinburgh"
+format:
+  mono-light-revealjs:
+    theme: [default, custom.scss]
+    history: false
+execute: 
+  echo: false
 ---
 
 ```{r}
@@ -11,6 +17,16 @@ library(tidyverse)
 library(brms)
 my_seed <- 8293
 ```
+
+## Coretta 2018
+
+::: box-note
+- Data from my PhD dissertation.
+
+- Effect of consonant voicing on the duration of preceding vowels in Italian and Polish.
+:::
+
+## 
 
 ```{r}
 duration <- read_csv("data/coretta2018/token-measures.csv") |> 
@@ -62,7 +78,6 @@ summary(vdur_1, prob = 0.9)
 ```{r}
 conditional_effects(vdur_1, "vowel:c2_voicing", conditions = make_conditions(vdur_1, "language"))
 ```
-
 
 ```{r}
 duration |> 
