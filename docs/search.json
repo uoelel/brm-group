@@ -138,5 +138,19 @@
     "title": "Including group-level effects in brms",
     "section": "Shrinkage",
     "text": "Shrinkage"
+  },
+  {
+    "objectID": "slides.html#group-level-differences",
+    "href": "slides.html#group-level-differences",
+    "title": "Including group-level effects in brms",
+    "section": "Group-level differences",
+    "text": "Group-level differences\n\nvdur_3 |&gt; \n  gather_draws(r_speaker[speaker,term]) |&gt; \n  filter(term == \"Intercept\") |&gt; \n  ggplot(aes(.value, reorder(as.factor(speaker), .value))) +\n  geom_vline(xintercept = 0, linetype = \"dashed\") +\n  stat_halfeye() +\n  labs(\n    x = \"Group-level differences\",\n    y = \"Speaker\"\n  )"
+  },
+  {
+    "objectID": "slides.html#partial-pooling-and-shrinkage",
+    "href": "slides.html#partial-pooling-and-shrinkage",
+    "title": "Including group-level effects in brms",
+    "section": "Partial pooling and shrinkage",
+    "text": "Partial pooling and shrinkage\n\nFrom a statistical point of view, group-level effects have the following characteristics:\n\nThe are estimated through partial pooling.\n\nAll estimates affect each other.\n\nPartial pooling causes shrinkage.\n\nThe group-level estimates are shrunk towards the population-level effect."
   }
 ]

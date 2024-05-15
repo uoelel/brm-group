@@ -341,5 +341,70 @@ vdur_3_sdraws |>
   stat_halfeye()
 ```
 
+## Group-level differences 
+
+```{r}
+vdur_3 |> 
+  gather_draws(r_speaker[speaker,term]) |> 
+  filter(term == "Intercept") |> 
+  ggplot(aes(.value, reorder(as.factor(speaker), .value))) +
+  geom_vline(xintercept = 0, linetype = "dashed") +
+  stat_halfeye() +
+  labs(
+    x = "Group-level differences",
+    y = "Speaker"
+  )
+```
+
+## Partial pooling and shrinkage
+
+::: box-note
+
+From a statistical point of view, group-level effects have the following characteristics:
+
+- The are estimated through **partial pooling.**
+
+  - All estimates affect each other.
+
+- Partial pooling causes **shrinkage**.
+
+  - The group-level estimates are shrunk towards the population-level effect.
+
+:::
+
 ## Shrinkage
+
+```{r}
+#| label: shrink
+#| echo: false
+
+newdat <- expand_grid(
+  speaker = unique(duration$speaker),
+  c2_voicing = c("voiceless"),
+  vowel = "a"
+) |> 
+  mutate(
+    language = ifelse(str_detect(speaker, "it"), "Italian", "Polish")
+  )
+
+vdur_3_epred <- epred_draws(
+  vdur_3,
+  newdat  
+)
+
+vdur_3_epred |> 
+  ggplot(aes(.epred, reorder(as.factor(speaker), .epred))) +
+  stat_halfeye() +
+  stat_summary(
+    data = duration |> filter(vowel == "a", c2_voicing == "voiceless"),
+    aes(x = v1_duration, y = speaker),
+    colour = "blue",
+    position = position_nudge(y = -0.25)
+  ) +
+  geom_vline(xintercept = exp(4.62)) +
+  labs(
+    x = "Group-level estimates",
+    y = "Speaker"
+  )
+```
 

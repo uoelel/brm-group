@@ -805,10 +805,43 @@ scale reduction factor on split chains (at convergence, Rhat = 1).</code></pre>
 
 </div>
 <img data-src="slides_files/figure-revealjs/vdur-3-sdraws-plot-1.png" class="quarto-figure quarto-figure-center r-stretch" width="960"></section>
+<section id="group-level-differences" class="slide level2">
+<h2>Group-level differences</h2>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a></a>vdur_3 <span class="sc">|&gt;</span> </span>
+<span id="cb24-2"><a></a>  <span class="fu">gather_draws</span>(r_speaker[speaker,term]) <span class="sc">|&gt;</span> </span>
+<span id="cb24-3"><a></a>  <span class="fu">filter</span>(term <span class="sc">==</span> <span class="st">"Intercept"</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb24-4"><a></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(.value, <span class="fu">reorder</span>(<span class="fu">as.factor</span>(speaker), .value))) <span class="sc">+</span></span>
+<span id="cb24-5"><a></a>  <span class="fu">geom_vline</span>(<span class="at">xintercept =</span> <span class="dv">0</span>, <span class="at">linetype =</span> <span class="st">"dashed"</span>) <span class="sc">+</span></span>
+<span id="cb24-6"><a></a>  <span class="fu">stat_halfeye</span>() <span class="sc">+</span></span>
+<span id="cb24-7"><a></a>  <span class="fu">labs</span>(</span>
+<span id="cb24-8"><a></a>    <span class="at">x =</span> <span class="st">"Group-level differences"</span>,</span>
+<span id="cb24-9"><a></a>    <span class="at">y =</span> <span class="st">"Speaker"</span></span>
+<span id="cb24-10"><a></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+
+</div>
+<img data-src="slides_files/figure-revealjs/unnamed-chunk-23-1.png" class="quarto-figure quarto-figure-center r-stretch" width="960"></section>
+<section id="partial-pooling-and-shrinkage" class="slide level2">
+<h2>Partial pooling and shrinkage</h2>
+<div class="box-note">
+<p>From a statistical point of view, group-level effects have the following characteristics:</p>
+<ul>
+<li><p>The are estimated through <strong>partial pooling.</strong></p>
+<ul>
+<li>All estimates affect each other.</li>
+</ul></li>
+<li><p>Partial pooling causes <strong>shrinkage</strong>.</p>
+<ul>
+<li>The group-level estimates are shrunk towards the population-level effect.</li>
+</ul></li>
+</ul>
+</div>
+</section>
 <section id="shrinkage" class="slide level2">
 <h2>Shrinkage</h2>
 
-<div class="quarto-auto-generated-content">
+
+<img data-src="slides_files/figure-revealjs/shrink-1.png" class="quarto-figure quarto-figure-center r-stretch" width="960"><div class="quarto-auto-generated-content">
 <div class="footer footer-default">
 
 </div>
