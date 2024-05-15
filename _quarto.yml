@@ -9,7 +9,8 @@ website:
     left:
       - href: index.qmd
         text: Home
-      - about.qmd
+      - href: slides.qmd
+        text: Slides
 
 format:
   html:
@@ -17,5 +18,6 @@ format:
     css: styles.css
     toc: true
 
-
+execute:
+  cache: true
 

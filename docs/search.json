@@ -1,0 +1,142 @@
+[
+  {
+    "objectID": "slides.html#coretta-2018",
+    "href": "slides.html#coretta-2018",
+    "title": "Including group-level effects in brms",
+    "section": "Coretta 2018",
+    "text": "Coretta 2018\n\n\nData from my PhD dissertation.\nEffect of consonant voicing on the duration of preceding vowels in Italian and Polish.\n/pVCV/ words in frame sentence.\n\nC is one of /t, d, k, ɡ/.\nV is /a, o, u/."
+  },
+  {
+    "objectID": "slides.html#coretta-2018-data",
+    "href": "slides.html#coretta-2018-data",
+    "title": "Including group-level effects in brms",
+    "section": "Coretta 2018: data",
+    "text": "Coretta 2018: data\n\nduration &lt;- read_csv(\"data/coretta2018/token-measures.csv\") |&gt; \n  rename(\n    c2_voicing = c2_phonation\n  ) |&gt; \n  mutate(\n    c2_voicing = factor(c2_voicing, levels = c(\"voiceless\", \"voiced\")),\n    vowel = factor(vowel, levels = c(\"a\", \"o\", \"u\")),\n    c2_place = factor(c2_place, levels = c(\"coronal\", \"velar\"))\n  ) |&gt; \n  drop_na(v1_duration)\n\ncontrasts(duration$vowel) &lt;- \"contr.sum\"\n\nduration\n\n# A tibble: 1,342 × 57\n   index speaker file     rec_date        ipu   prompt word    time sentence_ons\n   &lt;dbl&gt; &lt;chr&gt;   &lt;chr&gt;    &lt;chr&gt;           &lt;chr&gt; &lt;chr&gt;  &lt;chr&gt;  &lt;dbl&gt;        &lt;dbl&gt;\n 1     1 it01    it01-001 29/11/2016 15:… ipu_1 Dico … pugu   0.990        0.990\n 2     2 it01    it01-002 29/11/2016 15:… ipu_2 Dico … pada   3.62         0.502\n 3     3 it01    it01-003 29/11/2016 15:… ipu_3 Dico … poco   6.13         0.697\n 4     4 it01    it01-004 29/11/2016 15:… ipu_4 Dico … pata   8.82         0.623\n 5     5 it01    it01-005 29/11/2016 15:… ipu_5 Dico … boco  11.5          0.665\n 6     6 it01    it01-006 29/11/2016 15:… ipu_6 Dico … podo  14.3          0.647\n 7     7 it01    it01-007 29/11/2016 15:… ipu_7 Dico … boto  17.2          0.740\n 8     8 it01    it01-008 29/11/2016 15:… ipu_8 Dico … paca  19.7          0.502\n 9     9 it01    it01-009 29/11/2016 15:… ipu_9 Dico … bodo  22.3          0.556\n10    10 it01    it01-010 29/11/2016 15:… ipu_… Dico … pucu  24.8          0.535\n# ℹ 1,332 more rows\n# ℹ 48 more variables: sentence_off &lt;dbl&gt;, word_ons &lt;dbl&gt;, word_off &lt;dbl&gt;,\n#   v1_ons &lt;dbl&gt;, c2_ons &lt;dbl&gt;, v2_ons &lt;dbl&gt;, c1_rel &lt;dbl&gt;, c2_rel &lt;dbl&gt;,\n#   voicing_start &lt;dbl&gt;, voicing_end &lt;dbl&gt;, voicing_duration &lt;dbl&gt;,\n#   voiced_points &lt;dbl&gt;, GONS &lt;dbl&gt;, max &lt;dbl&gt;, NOFF &lt;dbl&gt;, NONS &lt;dbl&gt;,\n#   peak1 &lt;dbl&gt;, peak2 &lt;dbl&gt;, c1_duration &lt;dbl&gt;, c1_clos_duration &lt;dbl&gt;,\n#   c1_vot &lt;dbl&gt;, c1_rvoff &lt;dbl&gt;, v1_duration &lt;dbl&gt;, c2_duration &lt;dbl&gt;, …"
+  },
+  {
+    "objectID": "slides.html#vowel-duration-by-c2-voicing",
+    "href": "slides.html#vowel-duration-by-c2-voicing",
+    "title": "Including group-level effects in brms",
+    "section": "Vowel duration by C2 voicing",
+    "text": "Vowel duration by C2 voicing\n\nduration |&gt; \n  ggplot(aes(c2_voicing, v1_duration)) +\n  geom_violin(width = 0.5) +\n  geom_jitter(alpha = 0.1, width = 0.1) +\n  stat_summary(geom = \"point\", fun = median, colour = \"orange\", size = 3) +\n  facet_grid(cols = vars(language))"
+  },
+  {
+    "objectID": "slides.html#vowel-duration-by-c2-voicing-and-vowel",
+    "href": "slides.html#vowel-duration-by-c2-voicing-and-vowel",
+    "title": "Including group-level effects in brms",
+    "section": "Vowel duration by C2 voicing and vowel",
+    "text": "Vowel duration by C2 voicing and vowel\n\nduration |&gt; \n  ggplot(aes(c2_voicing, v1_duration)) +\n  geom_violin(width = 0.5) +\n  geom_jitter(alpha = 0.2, width = 0.1) +\n  stat_summary(geom = \"point\", fun = median, colour = \"orange\", size = 3) +\n  facet_grid(cols = vars(language), rows = vars(vowel))"
+  },
+  {
+    "objectID": "slides.html#bayesian-linear-model-of-vowel-duration",
+    "href": "slides.html#bayesian-linear-model-of-vowel-duration",
+    "title": "Including group-level effects in brms",
+    "section": "Bayesian linear model of vowel duration",
+    "text": "Bayesian linear model of vowel duration\n\nvdur_1 &lt;- brm(\n  v1_duration ~\n    c2_voicing * vowel * language,\n  data = duration,\n  family = lognormal,\n  seed = my_seed,\n  cores = 4,\n  file = \"data/cache/vdur_1\"\n)"
+  },
+  {
+    "objectID": "slides.html#bayesian-linear-model-of-vowel-duration-summary",
+    "href": "slides.html#bayesian-linear-model-of-vowel-duration-summary",
+    "title": "Including group-level effects in brms",
+    "section": "Bayesian linear model of vowel duration: summary",
+    "text": "Bayesian linear model of vowel duration: summary\n\nsummary(vdur_1, prob = 0.9)\n\n Family: lognormal \n  Links: mu = identity; sigma = identity \nFormula: v1_duration ~ c2_voicing * vowel * language \n   Data: duration (Number of observations: 1342) \n  Draws: 4 chains, each with iter = 2000; warmup = 1000; thin = 1;\n         total post-warmup draws = 4000\n\nRegression Coefficients:\n                                       Estimate Est.Error l-90% CI u-90% CI\nIntercept                                  4.67      0.01     4.65     4.68\nc2_voicingvoiced                           0.11      0.02     0.08     0.13\nvowel1                                     0.08      0.02     0.06     0.11\nvowel2                                     0.04      0.02     0.01     0.07\nlanguagePolish                            -0.37      0.02    -0.40    -0.34\nc2_voicingvoiced:vowel1                    0.04      0.02     0.00     0.08\nc2_voicingvoiced:vowel2                    0.04      0.02     0.00     0.08\nc2_voicingvoiced:languagePolish           -0.01      0.03    -0.06     0.04\nvowel1:languagePolish                      0.07      0.03     0.03     0.11\nvowel2:languagePolish                     -0.02      0.03    -0.06     0.03\nc2_voicingvoiced:vowel1:languagePolish    -0.03      0.04    -0.09     0.03\nc2_voicingvoiced:vowel2:languagePolish    -0.04      0.04    -0.10     0.02\n                                       Rhat Bulk_ESS Tail_ESS\nIntercept                              1.00     3672     3397\nc2_voicingvoiced                       1.00     3623     2981\nvowel1                                 1.00     2170     2941\nvowel2                                 1.00     2112     2529\nlanguagePolish                         1.00     3020     3149\nc2_voicingvoiced:vowel1                1.00     2040     2687\nc2_voicingvoiced:vowel2                1.00     2232     2625\nc2_voicingvoiced:languagePolish        1.00     2506     2788\nvowel1:languagePolish                  1.00     2119     2923\nvowel2:languagePolish                  1.00     2011     2814\nc2_voicingvoiced:vowel1:languagePolish 1.00     2077     2716\nc2_voicingvoiced:vowel2:languagePolish 1.00     2172     2574\n\nFurther Distributional Parameters:\n      Estimate Est.Error l-90% CI u-90% CI Rhat Bulk_ESS Tail_ESS\nsigma     0.24      0.00     0.23     0.25 1.00     5636     3023\n\nDraws were sampled using sampling(NUTS). For each parameter, Bulk_ESS\nand Tail_ESS are effective sample size measures, and Rhat is the potential\nscale reduction factor on split chains (at convergence, Rhat = 1)."
+  },
+  {
+    "objectID": "slides.html#conditional-predictions-of-vowel-duration",
+    "href": "slides.html#conditional-predictions-of-vowel-duration",
+    "title": "Including group-level effects in brms",
+    "section": "Conditional predictions of vowel duration",
+    "text": "Conditional predictions of vowel duration\n\nconditional_effects(vdur_1, \"vowel:c2_voicing\", conditions = make_conditions(vdur_1, \"language\"))"
+  },
+  {
+    "objectID": "slides.html#posterior-probability-distributions-of-coefficients",
+    "href": "slides.html#posterior-probability-distributions-of-coefficients",
+    "title": "Including group-level effects in brms",
+    "section": "Posterior probability distributions of coefficients",
+    "text": "Posterior probability distributions of coefficients\n\nvdur_1_gdraws &lt;- vdur_1 |&gt;\n  gather_draws(`b_.*`, regex = TRUE)\n\n\nvdur_1_gdraws |&gt; \n  filter(.variable != \"b_Intercept\") |&gt;\n  ggplot(aes(.value, .variable, fill = .variable)) +\n  geom_vline(xintercept = 0, linetype = \"dashed\") +\n  stat_halfeye(slab_alpha = 0.5) +\n  theme(legend.position = \"none\")"
+  },
+  {
+    "objectID": "slides.html#posterior-probability-distributions-of-effect-of-voicing",
+    "href": "slides.html#posterior-probability-distributions-of-effect-of-voicing",
+    "title": "Including group-level effects in brms",
+    "section": "Posterior probability distributions of effect of voicing",
+    "text": "Posterior probability distributions of effect of voicing\n\nvdur_1_sdraws &lt;- vdur_1 |&gt;\n  spread_draws(`b_.*`, regex = TRUE)\n\nvdur_1_sdraws\n\n# A tibble: 4,000 × 15\n   .chain .iteration .draw b_Intercept b_c2_voicingvoiced b_vowel1 b_vowel2\n    &lt;int&gt;      &lt;int&gt; &lt;int&gt;       &lt;dbl&gt;              &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;\n 1      1          1     1        4.67             0.109    0.0840   0.0156\n 2      1          2     2        4.66             0.118    0.0875   0.0526\n 3      1          3     3        4.65             0.112    0.0704   0.0437\n 4      1          4     4        4.66             0.118    0.0505   0.0371\n 5      1          5     5        4.68             0.0861   0.0997   0.0251\n 6      1          6     6        4.66             0.0953   0.0659   0.0536\n 7      1          7     7        4.64             0.132    0.0774   0.0588\n 8      1          8     8        4.65             0.119    0.0753   0.0502\n 9      1          9     9        4.67             0.110    0.103    0.0285\n10      1         10    10        4.68             0.0929   0.0928   0.0378\n# ℹ 3,990 more rows\n# ℹ 8 more variables: b_languagePolish &lt;dbl&gt;,\n#   `b_c2_voicingvoiced:vowel1` &lt;dbl&gt;, `b_c2_voicingvoiced:vowel2` &lt;dbl&gt;,\n#   `b_c2_voicingvoiced:languagePolish` &lt;dbl&gt;, `b_vowel1:languagePolish` &lt;dbl&gt;,\n#   `b_vowel2:languagePolish` &lt;dbl&gt;,\n#   `b_c2_voicingvoiced:vowel1:languagePolish` &lt;dbl&gt;,\n#   `b_c2_voicingvoiced:vowel2:languagePolish` &lt;dbl&gt;\n\n\n\nvdur_1_sdraws |&gt;\n  mutate(\n    ve_it = b_c2_voicingvoiced,\n    ve_pl = b_c2_voicingvoiced + `b_c2_voicingvoiced:languagePolish`\n  ) |&gt; \n  select(ve_it, ve_pl) |&gt; \n  pivot_longer(ve_it:ve_pl, names_to = \"effect\") |&gt; \n  ggplot(aes(exp(value), effect)) +\n  geom_vline(xintercept = 1) +\n  stat_halfeye()"
+  },
+  {
+    "objectID": "slides.html#vowel-duration-by-speaker",
+    "href": "slides.html#vowel-duration-by-speaker",
+    "title": "Including group-level effects in brms",
+    "section": "Vowel duration by speaker",
+    "text": "Vowel duration by speaker\n\nduration |&gt; \n  ggplot(aes(\"\", v1_duration, colour = language)) +\n  geom_jitter(alpha = 0.2, width = 0.1) +\n  facet_wrap(vars(speaker), ncol = 6) +\n  scale_colour_brewer(type = \"qual\")"
+  },
+  {
+    "objectID": "slides.html#random-effects-are-not-random",
+    "href": "slides.html#random-effects-are-not-random",
+    "title": "Including group-level effects in brms",
+    "section": "Random effects are not random",
+    "text": "Random effects are not random\n\n\nTerminology is unhelpful:\n\nRandom effect, multilevel (hyper)parameters, group-level effects, varying effects.\nAs in opposition to fixed effects, population-level effects.\nMixed-effects models, random-effects models, random and fixed-effects models, multilevel models, nested models, hierarchical models…\n\nDefinitions are unhelpful:\n\nAt least five different definitions.\n\n\n\n\n\n\nGrouping in the observations not covered by the population-level effects.\n\nRelated to (in)dependence between observations.\n\nCommon variables that are included in models as group-level effects are participant/speaker, item/word.\n\nNote that some variables could be entered as group-level effects in some cases but not others. It depends on the study design."
+  },
+  {
+    "objectID": "slides.html#group-levelmultilevel-intercepts",
+    "href": "slides.html#group-levelmultilevel-intercepts",
+    "title": "Including group-level effects in brms",
+    "section": "Group-level/multilevel intercepts",
+    "text": "Group-level/multilevel intercepts\n\nvdur_2 &lt;- brm(\n  v1_duration ~\n    c2_voicing * vowel * language +\n    (1 | speaker),\n  data = duration,\n  family = lognormal,\n  seed = my_seed,\n  cores = 4,\n  file = \"data/cache/vdur_2\"\n)"
+  },
+  {
+    "objectID": "slides.html#group-levelmultilevel-intercepts-summary",
+    "href": "slides.html#group-levelmultilevel-intercepts-summary",
+    "title": "Including group-level effects in brms",
+    "section": "Group-level/multilevel intercepts: summary",
+    "text": "Group-level/multilevel intercepts: summary\n\nsummary(vdur_2, prob = 0.9)\n\n Family: lognormal \n  Links: mu = identity; sigma = identity \nFormula: v1_duration ~ c2_voicing * vowel * language + (1 | speaker) \n   Data: duration (Number of observations: 1342) \n  Draws: 4 chains, each with iter = 2000; warmup = 1000; thin = 1;\n         total post-warmup draws = 4000\n\nMultilevel Hyperparameters:\n~speaker (Number of levels: 17) \n              Estimate Est.Error l-90% CI u-90% CI Rhat Bulk_ESS Tail_ESS\nsd(Intercept)     0.21      0.04     0.15     0.29 1.01      959     1605\n\nRegression Coefficients:\n                                       Estimate Est.Error l-90% CI u-90% CI\nIntercept                                  4.63      0.07     4.52     4.73\nc2_voicingvoiced                           0.11      0.01     0.09     0.12\nvowel1                                     0.09      0.01     0.07     0.11\nvowel2                                     0.04      0.01     0.03     0.06\nlanguagePolish                            -0.33      0.11    -0.52    -0.14\nc2_voicingvoiced:vowel1                    0.04      0.01     0.02     0.06\nc2_voicingvoiced:vowel2                    0.04      0.01     0.02     0.06\nc2_voicingvoiced:languagePolish           -0.01      0.02    -0.04     0.02\nvowel1:languagePolish                      0.06      0.02     0.03     0.09\nvowel2:languagePolish                     -0.02      0.02    -0.05     0.01\nc2_voicingvoiced:vowel1:languagePolish    -0.03      0.02    -0.07     0.01\nc2_voicingvoiced:vowel2:languagePolish    -0.04      0.02    -0.08     0.00\n                                       Rhat Bulk_ESS Tail_ESS\nIntercept                              1.00     1060     1393\nc2_voicingvoiced                       1.00     4434     3184\nvowel1                                 1.00     3416     2838\nvowel2                                 1.00     3307     3094\nlanguagePolish                         1.00     1200     1489\nc2_voicingvoiced:vowel1                1.00     3185     2918\nc2_voicingvoiced:vowel2                1.00     2981     3041\nc2_voicingvoiced:languagePolish        1.00     4238     2869\nvowel1:languagePolish                  1.00     3288     3188\nvowel2:languagePolish                  1.00     3102     2711\nc2_voicingvoiced:vowel1:languagePolish 1.00     3068     3039\nc2_voicingvoiced:vowel2:languagePolish 1.00     3183     2408\n\nFurther Distributional Parameters:\n      Estimate Est.Error l-90% CI u-90% CI Rhat Bulk_ESS Tail_ESS\nsigma     0.15      0.00     0.14     0.15 1.00     4784     2453\n\nDraws were sampled using sampling(NUTS). For each parameter, Bulk_ESS\nand Tail_ESS are effective sample size measures, and Rhat is the potential\nscale reduction factor on split chains (at convergence, Rhat = 1)."
+  },
+  {
+    "objectID": "slides.html#conditional-predictions-of-vowel-duration-1",
+    "href": "slides.html#conditional-predictions-of-vowel-duration-1",
+    "title": "Including group-level effects in brms",
+    "section": "Conditional predictions of vowel duration",
+    "text": "Conditional predictions of vowel duration\n\nconditional_effects(vdur_2, \"vowel:c2_voicing\", conditions = make_conditions(vdur_2, \"language\"))"
+  },
+  {
+    "objectID": "slides.html#posterior-probability-distributions-of-effect-of-voicing-1",
+    "href": "slides.html#posterior-probability-distributions-of-effect-of-voicing-1",
+    "title": "Including group-level effects in brms",
+    "section": "Posterior probability distributions of effect of voicing",
+    "text": "Posterior probability distributions of effect of voicing\n\nvdur_2_sdraws |&gt;\n  mutate(\n    ve_it = b_c2_voicingvoiced,\n    ve_pl = b_c2_voicingvoiced + `b_c2_voicingvoiced:languagePolish`\n  ) |&gt; \n  select(ve_it, ve_pl) |&gt; \n  pivot_longer(ve_it:ve_pl, names_to = \"effect\") |&gt; \n  ggplot(aes(exp(value), effect)) +\n  geom_vline(xintercept = 1) +\n  stat_halfeye()"
+  },
+  {
+    "objectID": "slides.html#voicing-effect-by-speaker",
+    "href": "slides.html#voicing-effect-by-speaker",
+    "title": "Including group-level effects in brms",
+    "section": "Voicing effect by speaker",
+    "text": "Voicing effect by speaker\n\nduration |&gt; \n  ggplot(aes(c2_voicing, v1_duration, colour = language)) +\n  geom_jitter(alpha = 0.2, width = 0.1) +\n  facet_wrap(vars(speaker), ncol = 6) +\n  scale_colour_brewer(type = \"qual\")"
+  },
+  {
+    "objectID": "slides.html#multilevel-intercepts-and-slopes",
+    "href": "slides.html#multilevel-intercepts-and-slopes",
+    "title": "Including group-level effects in brms",
+    "section": "Multilevel intercepts and slopes",
+    "text": "Multilevel intercepts and slopes\n\nvdur_3 &lt;- brm(\n  v1_duration ~\n    c2_voicing * vowel * language +\n    (c2_voicing * vowel | speaker),\n  data = duration,\n  family = lognormal,\n  seed = my_seed,\n  cores = 4,\n  file = \"data/cache/vdur_3\"\n)"
+  },
+  {
+    "objectID": "slides.html#conditional-predictions-of-vowel-duration-2",
+    "href": "slides.html#conditional-predictions-of-vowel-duration-2",
+    "title": "Including group-level effects in brms",
+    "section": "Conditional predictions of vowel duration",
+    "text": "Conditional predictions of vowel duration\n\nconditional_effects(vdur_3, \"vowel:c2_voicing\", conditions = make_conditions(vdur_3, \"language\"))"
+  },
+  {
+    "objectID": "slides.html#posterior-probability-of-voicing-effect",
+    "href": "slides.html#posterior-probability-of-voicing-effect",
+    "title": "Including group-level effects in brms",
+    "section": "Posterior probability of voicing effect",
+    "text": "Posterior probability of voicing effect\n\nvdur_3_sdraws |&gt;\n  mutate(\n    ve_it = b_c2_voicingvoiced,\n    ve_pl = b_c2_voicingvoiced + `b_c2_voicingvoiced:languagePolish`\n  ) |&gt; \n  select(ve_it, ve_pl) |&gt; \n  pivot_longer(ve_it:ve_pl, names_to = \"effect\") |&gt; \n  ggplot(aes(exp(value), effect)) +\n  geom_vline(xintercept = 1) +\n  stat_halfeye()"
+  },
+  {
+    "objectID": "slides.html#shrinkage",
+    "href": "slides.html#shrinkage",
+    "title": "Including group-level effects in brms",
+    "section": "Shrinkage",
+    "text": "Shrinkage"
+  }
+]

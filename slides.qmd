@@ -6,29 +6,49 @@ format:
   mono-light-revealjs:
     theme: [default, custom.scss]
     history: false
+filters: [tachyonsextra]
 execute: 
-  echo: false
+  echo: true
+knitr:
+  opts_chunk: 
+    fig.align: center
 ---
 
 ```{r}
 #| label: setup
+#| include: false
 
 library(tidyverse)
 library(brms)
+library(tidybayes)
+
+options(ggplot2.discrete.fill = RColorBrewer::brewer.pal(8, "Dark2"))
+options(ggplot2.discrete.colour = RColorBrewer::brewer.pal(8, "Dark2"))
+
 my_seed <- 8293
 ```
 
 ## Coretta 2018
 
 ::: box-note
+
 - Data from my PhD dissertation.
 
 - Effect of consonant voicing on the duration of preceding vowels in Italian and Polish.
+
+- /pVCV/ words in frame sentence.
+
+  - C is one of /t, d, k, ɡ/.
+  - V is /a, o, u/.
+
 :::
 
-## 
+## Coretta 2018: data
 
 ```{r}
+#| label: duration
+#| message: false
+
 duration <- read_csv("data/coretta2018/token-measures.csv") |> 
   rename(
     c2_voicing = c2_phonation
@@ -39,18 +59,31 @@ duration <- read_csv("data/coretta2018/token-measures.csv") |>
     c2_place = factor(c2_place, levels = c("coronal", "velar"))
   ) |> 
   drop_na(v1_duration)
+
+contrasts(duration$vowel) <- "contr.sum"
+
+duration
 ```
 
+
+## Vowel duration by C2 voicing
+
 ```{r}
+#| label: vdur-plot
+
 duration |> 
   ggplot(aes(c2_voicing, v1_duration)) +
   geom_violin(width = 0.5) +
-  geom_jitter(alpha = 0.2, width = 0.1) +
+  geom_jitter(alpha = 0.1, width = 0.1) +
   stat_summary(geom = "point", fun = median, colour = "orange", size = 3) +
   facet_grid(cols = vars(language))
 ```
 
+## Vowel duration by C2 voicing and vowel
+
 ```{r}
+#| label: vdur-plot-2
+
 duration |> 
   ggplot(aes(c2_voicing, v1_duration)) +
   geom_violin(width = 0.5) +
@@ -59,7 +92,12 @@ duration |>
   facet_grid(cols = vars(language), rows = vars(vowel))
 ```
 
+## Bayesian linear model of vowel duration
+
 ```{r}
+#| label: vdur-1
+#| echo: true
+
 vdur_1 <- brm(
   v1_duration ~
     c2_voicing * vowel * language,
@@ -71,22 +109,123 @@ vdur_1 <- brm(
 )
 ```
 
+## Bayesian linear model of vowel duration: summary
+
 ```{r}
+#| label: vdur-1-summ
+#| echo: true
+
 summary(vdur_1, prob = 0.9)
 ```
 
+##
+
+<iframe allowfullscreen frameborder="0" height="100%" mozallowfullscreen style="min-width: 500px; min-height: 355px" src="https://app.wooclap.com/events/DTZXHC/questions/66447e05b23c41e34adba140" width="100%"></iframe>
+
+## Conditional predictions of vowel duration
+
 ```{r}
+#| label: vdur-1-cond
+
 conditional_effects(vdur_1, "vowel:c2_voicing", conditions = make_conditions(vdur_1, "language"))
 ```
 
+## Posterior probability distributions of coefficients
+
 ```{r}
-duration |> 
-  ggplot(aes("", v1_duration)) +
-  geom_jitter(alpha = 0.2, width = 0.1) +
-  facet_wrap(vars(speaker), ncol = 6)
+#| label: vdur-1-gdraws
+
+vdur_1_gdraws <- vdur_1 |>
+  gather_draws(`b_.*`, regex = TRUE)
+```
+
+
+```{r}
+#| label: vdur-1-gdraws-plot
+
+vdur_1_gdraws |> 
+  filter(.variable != "b_Intercept") |>
+  ggplot(aes(.value, .variable, fill = .variable)) +
+  geom_vline(xintercept = 0, linetype = "dashed") +
+  stat_halfeye(slab_alpha = 0.5) +
+  theme(legend.position = "none")
+```
+
+## Posterior probability distributions of effect of voicing
+
+```{r}
+#| label: vdur-1-sdraws
+#| echo: true
+
+vdur_1_sdraws <- vdur_1 |>
+  spread_draws(`b_.*`, regex = TRUE)
+
+vdur_1_sdraws
 ```
 
 ```{r}
+#| label: vdur-1-sdraws-plot
+
+vdur_1_sdraws |>
+  mutate(
+    ve_it = b_c2_voicingvoiced,
+    ve_pl = b_c2_voicingvoiced + `b_c2_voicingvoiced:languagePolish`
+  ) |> 
+  select(ve_it, ve_pl) |> 
+  pivot_longer(ve_it:ve_pl, names_to = "effect") |> 
+  ggplot(aes(exp(value), effect)) +
+  geom_vline(xintercept = 1) +
+  stat_halfeye()
+```
+
+## Vowel duration by speaker
+
+```{r}
+#| label: speakers-dur
+
+duration |> 
+  ggplot(aes("", v1_duration, colour = language)) +
+  geom_jitter(alpha = 0.2, width = 0.1) +
+  facet_wrap(vars(speaker), ncol = 6) +
+  scale_colour_brewer(type = "qual")
+```
+
+## Random effects are not random
+
+::: box-tip
+
+- **Terminology is unhelpful**:
+
+  - Random effect, multilevel (hyper)parameters, group-level effects, varying effects.
+  
+  - As in opposition to fixed effects, population-level effects.
+  
+  - Mixed-effects models, random-effects models, random and fixed-effects models, multilevel models, nested models, hierarchical models...
+
+- **Definitions are unhelpful**:
+
+  - At least [five different definitions](https://stefanocoretta.github.io/posts/2021-03-15-on-random-effects/).
+
+:::
+
+. . .
+
+::: box-note
+
+- **Grouping in the observations not covered by the population-level effects.**
+
+  - Related to (in)dependence between observations.
+
+- Common variables that are included in models as group-level effects are participant/speaker, item/word.
+
+  - Note that some variables could be entered as group-level effects in some cases but not others. It depends on the study design.
+:::
+
+## Group-level/multilevel intercepts
+
+```{r}
+#| label: vdur-2
+
 vdur_2 <- brm(
   v1_duration ~
     c2_voicing * vowel * language +
@@ -99,22 +238,64 @@ vdur_2 <- brm(
 )
 ```
 
+## Group-level/multilevel intercepts: summary
+
 ```{r}
+#| label: vdur-2-summ
+
 summary(vdur_2, prob = 0.9)
 ```
 
+## Conditional predictions of vowel duration
+
 ```{r}
-conditional_effects(vdur_2, "vowel:c2_voicing", conditions = make_conditions(vdur_1, "language"))
+#| label: vdur-2-cond
+
+conditional_effects(vdur_2, "vowel:c2_voicing", conditions = make_conditions(vdur_2, "language"))
+```
+
+## Posterior probability distributions of effect of voicing
+
+```{r}
+#| label: vdur-2-sdraws
+#| echo: false
+
+vdur_2_sdraws <- vdur_2 |>
+  spread_draws(`b_.*`, regex = TRUE)
 ```
 
 ```{r}
+#| label: vdur-2-sdraws-plot
+
+vdur_2_sdraws |>
+  mutate(
+    ve_it = b_c2_voicingvoiced,
+    ve_pl = b_c2_voicingvoiced + `b_c2_voicingvoiced:languagePolish`
+  ) |> 
+  select(ve_it, ve_pl) |> 
+  pivot_longer(ve_it:ve_pl, names_to = "effect") |> 
+  ggplot(aes(exp(value), effect)) +
+  geom_vline(xintercept = 1) +
+  stat_halfeye()
+```
+
+## Voicing effect by speaker
+
+```{r}
+#| label: speakers-ve
+
 duration |> 
-  ggplot(aes(c2_voicing, v1_duration)) +
+  ggplot(aes(c2_voicing, v1_duration, colour = language)) +
   geom_jitter(alpha = 0.2, width = 0.1) +
-  facet_wrap(vars(speaker), ncol = 6)
+  facet_wrap(vars(speaker), ncol = 6) +
+  scale_colour_brewer(type = "qual")
 ```
 
+## Multilevel intercepts and slopes
+
 ```{r}
+#| label: vdur-3
+
 vdur_3 <- brm(
   v1_duration ~
     c2_voicing * vowel * language +
@@ -127,6 +308,38 @@ vdur_3 <- brm(
 )
 ```
 
+## Conditional predictions of vowel duration
+
 ```{r}
-conditional_effects(vdur_3, "vowel:c2_voicing", conditions = make_conditions(vdur_1, "language"))
+#| label: vdur-3-cond
+
+conditional_effects(vdur_3, "vowel:c2_voicing", conditions = make_conditions(vdur_3, "language"))
 ```
+
+## Posterior probability of voicing effect
+
+```{r}
+#| label: vdur-3-sdraws
+#| echo: false
+
+vdur_3_sdraws <- vdur_3 |>
+  spread_draws(`b_.*`, regex = TRUE)
+```
+
+```{r}
+#| label: vdur-3-sdraws-plot
+
+vdur_3_sdraws |>
+  mutate(
+    ve_it = b_c2_voicingvoiced,
+    ve_pl = b_c2_voicingvoiced + `b_c2_voicingvoiced:languagePolish`
+  ) |> 
+  select(ve_it, ve_pl) |> 
+  pivot_longer(ve_it:ve_pl, names_to = "effect") |> 
+  ggplot(aes(exp(value), effect)) +
+  geom_vline(xintercept = 1) +
+  stat_halfeye()
+```
+
+## Shrinkage
+
