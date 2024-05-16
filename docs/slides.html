@@ -12,7 +12,7 @@
   <meta name="generator" content="quarto-1.4.554">
 
   <meta name="author" content="Dr Stefano Coretta">
-  <title>brm-group - Including group-level effects in brms</title>
+  <title>Group-level effects - Including group-level effects in brms</title>
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
@@ -410,8 +410,11 @@ Dr Stefano Coretta
 <h2>Coretta 2018</h2>
 <div class="box-note">
 <ul>
-<li><p>Data from my PhD dissertation.</p></li>
-<li><p>Effect of consonant voicing on the duration of preceding vowels in Italian and Polish.</p></li>
+<li><p>Data from my PhD dissertation.</p>
+<ul>
+<li><strong>Voicing effect</strong>: vowels tend to be longer when followed by voiced consonants and shorter when followed by voiceless consonants.</li>
+</ul></li>
+<li><p>Effect of stop voicing on the duration of preceding vowels in Italian and Polish.</p></li>
 <li><p>/pVCV/ words in frame sentence.</p>
 <ul>
 <li>C is one of /t, d, k, ɡ/.</li>
@@ -420,8 +423,8 @@ Dr Stefano Coretta
 </ul>
 </div>
 </section>
-<section id="coretta-2018-data" class="slide level2">
-<h2>Coretta 2018: data</h2>
+<section id="read-the-data" class="slide level2">
+<h2>Read the data</h2>
 <div class="cell" data-layout-align="center">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a></a>duration <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"data/coretta2018/token-measures.csv"</span>) <span class="sc">|&gt;</span> </span>
 <span id="cb1-2"><a></a>  <span class="fu">rename</span>(</span>
@@ -434,75 +437,57 @@ Dr Stefano Coretta
 <span id="cb1-9"><a></a>  ) <span class="sc">|&gt;</span> </span>
 <span id="cb1-10"><a></a>  <span class="fu">drop_na</span>(v1_duration)</span>
 <span id="cb1-11"><a></a></span>
-<span id="cb1-12"><a></a><span class="fu">contrasts</span>(duration<span class="sc">$</span>vowel) <span class="ot">&lt;-</span> <span class="st">"contr.sum"</span></span>
-<span id="cb1-13"><a></a></span>
-<span id="cb1-14"><a></a>duration</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb1-12"><a></a><span class="fu">contrasts</span>(duration<span class="sc">$</span>vowel) <span class="ot">&lt;-</span> <span class="st">"contr.sum"</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="the-tibble-duration" class="slide level2">
+<h2>The tibble <code>duration</code></h2>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a></a>duration <span class="sc">|&gt;</span> <span class="fu">select</span>(speaker, word, vowel, c2_voicing, v1_duration)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 1,342 × 57
-   index speaker file     rec_date        ipu   prompt word    time sentence_ons
-   &lt;dbl&gt; &lt;chr&gt;   &lt;chr&gt;    &lt;chr&gt;           &lt;chr&gt; &lt;chr&gt;  &lt;chr&gt;  &lt;dbl&gt;        &lt;dbl&gt;
- 1     1 it01    it01-001 29/11/2016 15:… ipu_1 Dico … pugu   0.990        0.990
- 2     2 it01    it01-002 29/11/2016 15:… ipu_2 Dico … pada   3.62         0.502
- 3     3 it01    it01-003 29/11/2016 15:… ipu_3 Dico … poco   6.13         0.697
- 4     4 it01    it01-004 29/11/2016 15:… ipu_4 Dico … pata   8.82         0.623
- 5     5 it01    it01-005 29/11/2016 15:… ipu_5 Dico … boco  11.5          0.665
- 6     6 it01    it01-006 29/11/2016 15:… ipu_6 Dico … podo  14.3          0.647
- 7     7 it01    it01-007 29/11/2016 15:… ipu_7 Dico … boto  17.2          0.740
- 8     8 it01    it01-008 29/11/2016 15:… ipu_8 Dico … paca  19.7          0.502
- 9     9 it01    it01-009 29/11/2016 15:… ipu_9 Dico … bodo  22.3          0.556
-10    10 it01    it01-010 29/11/2016 15:… ipu_… Dico … pucu  24.8          0.535
-# ℹ 1,332 more rows
-# ℹ 48 more variables: sentence_off &lt;dbl&gt;, word_ons &lt;dbl&gt;, word_off &lt;dbl&gt;,
-#   v1_ons &lt;dbl&gt;, c2_ons &lt;dbl&gt;, v2_ons &lt;dbl&gt;, c1_rel &lt;dbl&gt;, c2_rel &lt;dbl&gt;,
-#   voicing_start &lt;dbl&gt;, voicing_end &lt;dbl&gt;, voicing_duration &lt;dbl&gt;,
-#   voiced_points &lt;dbl&gt;, GONS &lt;dbl&gt;, max &lt;dbl&gt;, NOFF &lt;dbl&gt;, NONS &lt;dbl&gt;,
-#   peak1 &lt;dbl&gt;, peak2 &lt;dbl&gt;, c1_duration &lt;dbl&gt;, c1_clos_duration &lt;dbl&gt;,
-#   c1_vot &lt;dbl&gt;, c1_rvoff &lt;dbl&gt;, v1_duration &lt;dbl&gt;, c2_duration &lt;dbl&gt;, …</code></pre>
+<pre><code># A tibble: 1,342 × 5
+   speaker word  vowel c2_voicing v1_duration
+   &lt;chr&gt;   &lt;chr&gt; &lt;fct&gt; &lt;fct&gt;            &lt;dbl&gt;
+ 1 it01    pugu  u     voiced            95.2
+ 2 it01    pada  a     voiced           139. 
+ 3 it01    poco  o     voiceless        127. 
+ 4 it01    pata  a     voiceless        127. 
+ 5 it01    boco  o     voiceless        132. 
+ 6 it01    podo  o     voiced           125. 
+ 7 it01    boto  o     voiceless        134. 
+ 8 it01    paca  a     voiceless        119. 
+ 9 it01    bodo  o     voiced           130. 
+10 it01    pucu  u     voiceless         99.1
+# ℹ 1,332 more rows</code></pre>
 </div>
 </div>
 </section>
 <section id="vowel-duration-by-c2-voicing" class="slide level2">
 <h2>Vowel duration by C2 voicing</h2>
-<div class="cell" data-layout-align="center">
-<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a></a>duration <span class="sc">|&gt;</span> </span>
-<span id="cb3-2"><a></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(c2_voicing, v1_duration)) <span class="sc">+</span></span>
-<span id="cb3-3"><a></a>  <span class="fu">geom_violin</span>(<span class="at">width =</span> <span class="fl">0.5</span>) <span class="sc">+</span></span>
-<span id="cb3-4"><a></a>  <span class="fu">geom_jitter</span>(<span class="at">alpha =</span> <span class="fl">0.1</span>, <span class="at">width =</span> <span class="fl">0.1</span>) <span class="sc">+</span></span>
-<span id="cb3-5"><a></a>  <span class="fu">stat_summary</span>(<span class="at">geom =</span> <span class="st">"point"</span>, <span class="at">fun =</span> median, <span class="at">colour =</span> <span class="st">"orange"</span>, <span class="at">size =</span> <span class="dv">3</span>) <span class="sc">+</span></span>
-<span id="cb3-6"><a></a>  <span class="fu">facet_grid</span>(<span class="at">cols =</span> <span class="fu">vars</span>(language))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 
-</div>
 <img data-src="slides_files/figure-revealjs/vdur-plot-1.png" class="quarto-figure quarto-figure-center r-stretch" width="960"></section>
 <section id="vowel-duration-by-c2-voicing-and-vowel" class="slide level2">
 <h2>Vowel duration by C2 voicing and vowel</h2>
-<div class="cell" data-layout-align="center">
-<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a></a>duration <span class="sc">|&gt;</span> </span>
-<span id="cb4-2"><a></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(c2_voicing, v1_duration)) <span class="sc">+</span></span>
-<span id="cb4-3"><a></a>  <span class="fu">geom_violin</span>(<span class="at">width =</span> <span class="fl">0.5</span>) <span class="sc">+</span></span>
-<span id="cb4-4"><a></a>  <span class="fu">geom_jitter</span>(<span class="at">alpha =</span> <span class="fl">0.2</span>, <span class="at">width =</span> <span class="fl">0.1</span>) <span class="sc">+</span></span>
-<span id="cb4-5"><a></a>  <span class="fu">stat_summary</span>(<span class="at">geom =</span> <span class="st">"point"</span>, <span class="at">fun =</span> median, <span class="at">colour =</span> <span class="st">"orange"</span>, <span class="at">size =</span> <span class="dv">3</span>) <span class="sc">+</span></span>
-<span id="cb4-6"><a></a>  <span class="fu">facet_grid</span>(<span class="at">cols =</span> <span class="fu">vars</span>(language), <span class="at">rows =</span> <span class="fu">vars</span>(vowel))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 
-</div>
 <img data-src="slides_files/figure-revealjs/vdur-plot-2-1.png" class="quarto-figure quarto-figure-center r-stretch" width="960"></section>
 <section id="bayesian-linear-model-of-vowel-duration" class="slide level2">
 <h2>Bayesian linear model of vowel duration</h2>
 <div class="cell" data-layout-align="center">
-<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a></a>vdur_1 <span class="ot">&lt;-</span> <span class="fu">brm</span>(</span>
-<span id="cb5-2"><a></a>  v1_duration <span class="sc">~</span></span>
-<span id="cb5-3"><a></a>    c2_voicing <span class="sc">*</span> vowel <span class="sc">*</span> language,</span>
-<span id="cb5-4"><a></a>  <span class="at">data =</span> duration,</span>
-<span id="cb5-5"><a></a>  <span class="at">family =</span> lognormal,</span>
-<span id="cb5-6"><a></a>  <span class="at">seed =</span> my_seed,</span>
-<span id="cb5-7"><a></a>  <span class="at">cores =</span> <span class="dv">4</span>,</span>
-<span id="cb5-8"><a></a>  <span class="at">file =</span> <span class="st">"data/cache/vdur_1"</span></span>
-<span id="cb5-9"><a></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a></a>vdur_1 <span class="ot">&lt;-</span> <span class="fu">brm</span>(</span>
+<span id="cb4-2"><a></a>  v1_duration <span class="sc">~</span></span>
+<span id="cb4-3"><a></a>    c2_voicing <span class="sc">*</span> vowel <span class="sc">*</span> language,</span>
+<span id="cb4-4"><a></a>  <span class="at">data =</span> duration,</span>
+<span id="cb4-5"><a></a>  <span class="at">family =</span> lognormal,</span>
+<span id="cb4-6"><a></a>  <span class="at">seed =</span> my_seed,</span>
+<span id="cb4-7"><a></a>  <span class="at">cores =</span> <span class="dv">4</span>,</span>
+<span id="cb4-8"><a></a>  <span class="at">file =</span> <span class="st">"data/cache/vdur_1"</span></span>
+<span id="cb4-9"><a></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 <section id="bayesian-linear-model-of-vowel-duration-summary" class="slide level2">
 <h2>Bayesian linear model of vowel duration: summary</h2>
 <div class="cell" data-layout-align="center">
-<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a></a><span class="fu">summary</span>(vdur_1, <span class="at">prob =</span> <span class="fl">0.9</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a></a><span class="fu">summary</span>(vdur_1, <span class="at">prob =</span> <span class="fl">0.9</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code> Family: lognormal 
   Links: mu = identity; sigma = identity 
@@ -557,33 +542,33 @@ scale reduction factor on split chains (at convergence, Rhat = 1).</code></pre>
 <section id="conditional-predictions-of-vowel-duration" class="slide level2">
 <h2>Conditional predictions of vowel duration</h2>
 <div class="cell" data-layout-align="center">
-<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a></a><span class="fu">conditional_effects</span>(vdur_1, <span class="st">"vowel:c2_voicing"</span>, <span class="at">conditions =</span> <span class="fu">make_conditions</span>(vdur_1, <span class="st">"language"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a></a><span class="fu">conditional_effects</span>(vdur_1, <span class="st">"vowel:c2_voicing"</span>, <span class="at">conditions =</span> <span class="fu">make_conditions</span>(vdur_1, <span class="st">"language"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 
 </div>
 <img data-src="slides_files/figure-revealjs/vdur-1-cond-1.png" class="quarto-figure quarto-figure-center r-stretch" width="960"></section>
 <section id="posterior-probability-distributions-of-coefficients" class="slide level2">
 <h2>Posterior probability distributions of coefficients</h2>
 <div class="cell" data-layout-align="center">
-<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a></a>vdur_1_gdraws <span class="ot">&lt;-</span> vdur_1 <span class="sc">|&gt;</span></span>
-<span id="cb9-2"><a></a>  <span class="fu">gather_draws</span>(<span class="st">`</span><span class="at">b_.*</span><span class="st">`</span>, <span class="at">regex =</span> <span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-<div class="cell" data-layout-align="center">
-<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a></a>vdur_1_gdraws <span class="sc">|&gt;</span> </span>
-<span id="cb10-2"><a></a>  <span class="fu">filter</span>(.variable <span class="sc">!=</span> <span class="st">"b_Intercept"</span>) <span class="sc">|&gt;</span></span>
-<span id="cb10-3"><a></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(.value, .variable, <span class="at">fill =</span> .variable)) <span class="sc">+</span></span>
-<span id="cb10-4"><a></a>  <span class="fu">geom_vline</span>(<span class="at">xintercept =</span> <span class="dv">0</span>, <span class="at">linetype =</span> <span class="st">"dashed"</span>) <span class="sc">+</span></span>
-<span id="cb10-5"><a></a>  <span class="fu">stat_halfeye</span>(<span class="at">slab_alpha =</span> <span class="fl">0.5</span>) <span class="sc">+</span></span>
-<span id="cb10-6"><a></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"none"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a></a>vdur_1_gdraws <span class="ot">&lt;-</span> vdur_1 <span class="sc">|&gt;</span></span>
+<span id="cb8-2"><a></a>  <span class="fu">gather_draws</span>(<span class="st">`</span><span class="at">b_.*</span><span class="st">`</span>, <span class="at">regex =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb8-3"><a></a></span>
+<span id="cb8-4"><a></a>vdur_1_gdraws <span class="sc">|&gt;</span> </span>
+<span id="cb8-5"><a></a>  <span class="fu">filter</span>(.variable <span class="sc">!=</span> <span class="st">"b_Intercept"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb8-6"><a></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(.value, .variable, <span class="at">fill =</span> .variable)) <span class="sc">+</span></span>
+<span id="cb8-7"><a></a>  <span class="fu">geom_vline</span>(<span class="at">xintercept =</span> <span class="dv">0</span>, <span class="at">linetype =</span> <span class="st">"dashed"</span>) <span class="sc">+</span></span>
+<span id="cb8-8"><a></a>  <span class="fu">stat_halfeye</span>(<span class="at">slab_alpha =</span> <span class="fl">0.5</span>) <span class="sc">+</span></span>
+<span id="cb8-9"><a></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"none"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 
 </div>
-<img data-src="slides_files/figure-revealjs/vdur-1-gdraws-plot-1.png" class="quarto-figure quarto-figure-center r-stretch" width="960"></section>
-<section id="posterior-probability-distributions-of-effect-of-voicing" class="slide level2">
-<h2>Posterior probability distributions of effect of voicing</h2>
+<img data-src="slides_files/figure-revealjs/vdur-1-gdraws-1.png" class="quarto-figure quarto-figure-center r-stretch" width="960"></section>
+<section id="spread-draws" class="slide level2">
+<h2>Spread draws</h2>
 <div class="cell" data-layout-align="center">
-<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a></a>vdur_1_sdraws <span class="ot">&lt;-</span> vdur_1 <span class="sc">|&gt;</span></span>
-<span id="cb11-2"><a></a>  <span class="fu">spread_draws</span>(<span class="st">`</span><span class="at">b_.*</span><span class="st">`</span>, <span class="at">regex =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb11-3"><a></a></span>
-<span id="cb11-4"><a></a>vdur_1_sdraws</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a></a><span class="co"># libary(tidybayes)</span></span>
+<span id="cb9-2"><a></a>vdur_1_sdraws <span class="ot">&lt;-</span> vdur_1 <span class="sc">|&gt;</span></span>
+<span id="cb9-3"><a></a>  <span class="fu">spread_draws</span>(<span class="st">`</span><span class="at">b_.*</span><span class="st">`</span>, <span class="at">regex =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb9-4"><a></a></span>
+<span id="cb9-5"><a></a>vdur_1_sdraws</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 4,000 × 15
    .chain .iteration .draw b_Intercept b_c2_voicingvoiced b_vowel1 b_vowel2
@@ -607,28 +592,31 @@ scale reduction factor on split chains (at convergence, Rhat = 1).</code></pre>
 #   `b_c2_voicingvoiced:vowel2:languagePolish` &lt;dbl&gt;</code></pre>
 </div>
 </div>
+</section>
+<section id="posterior-probability-distributions-of-effect-of-voicing" class="slide level2">
+<h2>Posterior probability distributions of effect of voicing</h2>
 <div class="cell" data-layout-align="center">
-<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a></a>vdur_1_sdraws <span class="sc">|&gt;</span></span>
-<span id="cb13-2"><a></a>  <span class="fu">mutate</span>(</span>
-<span id="cb13-3"><a></a>    <span class="at">ve_it =</span> b_c2_voicingvoiced,</span>
-<span id="cb13-4"><a></a>    <span class="at">ve_pl =</span> b_c2_voicingvoiced <span class="sc">+</span> <span class="st">`</span><span class="at">b_c2_voicingvoiced:languagePolish</span><span class="st">`</span></span>
-<span id="cb13-5"><a></a>  ) <span class="sc">|&gt;</span> </span>
-<span id="cb13-6"><a></a>  <span class="fu">select</span>(ve_it, ve_pl) <span class="sc">|&gt;</span> </span>
-<span id="cb13-7"><a></a>  <span class="fu">pivot_longer</span>(ve_it<span class="sc">:</span>ve_pl, <span class="at">names_to =</span> <span class="st">"effect"</span>) <span class="sc">|&gt;</span> </span>
-<span id="cb13-8"><a></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="fu">exp</span>(value), effect)) <span class="sc">+</span></span>
-<span id="cb13-9"><a></a>  <span class="fu">geom_vline</span>(<span class="at">xintercept =</span> <span class="dv">1</span>) <span class="sc">+</span></span>
-<span id="cb13-10"><a></a>  <span class="fu">stat_halfeye</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a></a>vdur_1_sdraws <span class="sc">|&gt;</span></span>
+<span id="cb11-2"><a></a>  <span class="fu">mutate</span>(</span>
+<span id="cb11-3"><a></a>    <span class="at">ve_it =</span> b_c2_voicingvoiced,</span>
+<span id="cb11-4"><a></a>    <span class="at">ve_pl =</span> b_c2_voicingvoiced <span class="sc">+</span> <span class="st">`</span><span class="at">b_c2_voicingvoiced:languagePolish</span><span class="st">`</span></span>
+<span id="cb11-5"><a></a>  ) <span class="sc">|&gt;</span> </span>
+<span id="cb11-6"><a></a>  <span class="fu">select</span>(ve_it, ve_pl) <span class="sc">|&gt;</span> </span>
+<span id="cb11-7"><a></a>  <span class="fu">pivot_longer</span>(ve_it<span class="sc">:</span>ve_pl, <span class="at">names_to =</span> <span class="st">"effect"</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb11-8"><a></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="fu">exp</span>(value), effect)) <span class="sc">+</span></span>
+<span id="cb11-9"><a></a>  <span class="fu">geom_vline</span>(<span class="at">xintercept =</span> <span class="dv">1</span>) <span class="sc">+</span></span>
+<span id="cb11-10"><a></a>  <span class="fu">stat_halfeye</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 
 </div>
 <img data-src="slides_files/figure-revealjs/vdur-1-sdraws-plot-1.png" class="quarto-figure quarto-figure-center r-stretch" width="960"></section>
 <section id="vowel-duration-by-speaker" class="slide level2">
 <h2>Vowel duration by speaker</h2>
 <div class="cell" data-layout-align="center">
-<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a></a>duration <span class="sc">|&gt;</span> </span>
-<span id="cb14-2"><a></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="st">""</span>, v1_duration, <span class="at">colour =</span> language)) <span class="sc">+</span></span>
-<span id="cb14-3"><a></a>  <span class="fu">geom_jitter</span>(<span class="at">alpha =</span> <span class="fl">0.2</span>, <span class="at">width =</span> <span class="fl">0.1</span>) <span class="sc">+</span></span>
-<span id="cb14-4"><a></a>  <span class="fu">facet_wrap</span>(<span class="fu">vars</span>(speaker), <span class="at">ncol =</span> <span class="dv">6</span>) <span class="sc">+</span></span>
-<span id="cb14-5"><a></a>  <span class="fu">scale_colour_brewer</span>(<span class="at">type =</span> <span class="st">"qual"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a></a>duration <span class="sc">|&gt;</span> </span>
+<span id="cb12-2"><a></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="st">""</span>, v1_duration, <span class="at">colour =</span> language)) <span class="sc">+</span></span>
+<span id="cb12-3"><a></a>  <span class="fu">geom_jitter</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>, <span class="at">width =</span> <span class="fl">0.1</span>) <span class="sc">+</span></span>
+<span id="cb12-4"><a></a>  <span class="fu">facet_wrap</span>(<span class="fu">vars</span>(speaker), <span class="at">ncol =</span> <span class="dv">6</span>) <span class="sc">+</span></span>
+<span id="cb12-5"><a></a>  <span class="fu">scale_colour_brewer</span>(<span class="at">type =</span> <span class="st">"qual"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 
 </div>
 <img data-src="slides_files/figure-revealjs/speakers-dur-1.png" class="quarto-figure quarto-figure-center r-stretch" width="960"></section>
@@ -663,25 +651,33 @@ scale reduction factor on split chains (at convergence, Rhat = 1).</code></pre>
 </div>
 </div>
 </section>
-<section id="group-levelmultilevel-intercepts" class="slide level2">
-<h2>Group-level/multilevel intercepts</h2>
+<section id="section-1" class="slide level2">
+<h2></h2>
+<iframe allowfullscreen="" frameborder="0" height="100%" mozallowfullscreen="" style="min-width: 500px; min-height: 355px" src="https://app.wooclap.com/events/DTZXHC/questions/6645d7cd9868d5b13c717487" width="100%">
+</iframe>
+</section>
+<section id="group-level-intercepts" class="slide level2">
+<h2>Group-level intercepts</h2>
 <div class="cell" data-layout-align="center">
-<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a></a>vdur_2 <span class="ot">&lt;-</span> <span class="fu">brm</span>(</span>
-<span id="cb15-2"><a></a>  v1_duration <span class="sc">~</span></span>
-<span id="cb15-3"><a></a>    c2_voicing <span class="sc">*</span> vowel <span class="sc">*</span> language <span class="sc">+</span></span>
-<span id="cb15-4"><a></a>    (<span class="dv">1</span> <span class="sc">|</span> speaker),</span>
-<span id="cb15-5"><a></a>  <span class="at">data =</span> duration,</span>
-<span id="cb15-6"><a></a>  <span class="at">family =</span> lognormal,</span>
-<span id="cb15-7"><a></a>  <span class="at">seed =</span> my_seed,</span>
-<span id="cb15-8"><a></a>  <span class="at">cores =</span> <span class="dv">4</span>,</span>
-<span id="cb15-9"><a></a>  <span class="at">file =</span> <span class="st">"data/cache/vdur_2"</span></span>
-<span id="cb15-10"><a></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a></a>vdur_2 <span class="ot">&lt;-</span> <span class="fu">brm</span>(</span>
+<span id="cb13-2"><a></a>  v1_duration <span class="sc">~</span></span>
+<span id="cb13-3"><a></a>    c2_voicing <span class="sc">*</span> vowel <span class="sc">*</span> language <span class="sc">+</span></span>
+<span id="cb13-4"><a></a>    (<span class="dv">1</span> <span class="sc">|</span> speaker),</span>
+<span id="cb13-5"><a></a>  <span class="at">data =</span> duration,</span>
+<span id="cb13-6"><a></a>  <span class="at">family =</span> lognormal,</span>
+<span id="cb13-7"><a></a>  <span class="at">seed =</span> my_seed,</span>
+<span id="cb13-8"><a></a>  <span class="at">cores =</span> <span class="dv">4</span>,</span>
+<span id="cb13-9"><a></a>  <span class="at">file =</span> <span class="st">"data/cache/vdur_2"</span></span>
+<span id="cb13-10"><a></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
-<section id="group-levelmultilevel-intercepts-summary" class="slide level2">
-<h2>Group-level/multilevel intercepts: summary</h2>
+<section id="section-2" class="slide level2">
+<h2></h2>
+</section>
+<section id="group-level-intercepts-summary" class="slide level2">
+<h2>Group-level intercepts: summary</h2>
 <div class="cell" data-layout-align="center">
-<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a></a><span class="fu">summary</span>(vdur_2, <span class="at">prob =</span> <span class="fl">0.9</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a></a><span class="fu">summary</span>(vdur_2, <span class="at">prob =</span> <span class="fl">0.9</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code> Family: lognormal 
   Links: mu = identity; sigma = identity 
@@ -736,91 +732,136 @@ scale reduction factor on split chains (at convergence, Rhat = 1).</code></pre>
 <section id="conditional-predictions-of-vowel-duration-1" class="slide level2">
 <h2>Conditional predictions of vowel duration</h2>
 <div class="cell" data-layout-align="center">
-<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a></a><span class="fu">conditional_effects</span>(vdur_2, <span class="st">"vowel:c2_voicing"</span>, <span class="at">conditions =</span> <span class="fu">make_conditions</span>(vdur_2, <span class="st">"language"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a></a><span class="fu">conditional_effects</span>(vdur_2, <span class="st">"vowel:c2_voicing"</span>, <span class="at">conditions =</span> <span class="fu">make_conditions</span>(vdur_2, <span class="st">"language"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 
 </div>
 <img data-src="slides_files/figure-revealjs/vdur-2-cond-1.png" class="quarto-figure quarto-figure-center r-stretch" width="960"></section>
 <section id="posterior-probability-distributions-of-effect-of-voicing-1" class="slide level2">
 <h2>Posterior probability distributions of effect of voicing</h2>
 <div class="cell" data-layout-align="center">
-<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a></a>vdur_2_sdraws <span class="sc">|&gt;</span></span>
-<span id="cb19-2"><a></a>  <span class="fu">mutate</span>(</span>
-<span id="cb19-3"><a></a>    <span class="at">ve_it =</span> b_c2_voicingvoiced,</span>
-<span id="cb19-4"><a></a>    <span class="at">ve_pl =</span> b_c2_voicingvoiced <span class="sc">+</span> <span class="st">`</span><span class="at">b_c2_voicingvoiced:languagePolish</span><span class="st">`</span></span>
-<span id="cb19-5"><a></a>  ) <span class="sc">|&gt;</span> </span>
-<span id="cb19-6"><a></a>  <span class="fu">select</span>(ve_it, ve_pl) <span class="sc">|&gt;</span> </span>
-<span id="cb19-7"><a></a>  <span class="fu">pivot_longer</span>(ve_it<span class="sc">:</span>ve_pl, <span class="at">names_to =</span> <span class="st">"effect"</span>) <span class="sc">|&gt;</span> </span>
-<span id="cb19-8"><a></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="fu">exp</span>(value), effect)) <span class="sc">+</span></span>
-<span id="cb19-9"><a></a>  <span class="fu">geom_vline</span>(<span class="at">xintercept =</span> <span class="dv">1</span>) <span class="sc">+</span></span>
-<span id="cb19-10"><a></a>  <span class="fu">stat_halfeye</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a></a>vdur_2_sdraws <span class="sc">|&gt;</span></span>
+<span id="cb17-2"><a></a>  <span class="fu">mutate</span>(</span>
+<span id="cb17-3"><a></a>    <span class="at">ve_it =</span> b_c2_voicingvoiced,</span>
+<span id="cb17-4"><a></a>    <span class="at">ve_pl =</span> b_c2_voicingvoiced <span class="sc">+</span> <span class="st">`</span><span class="at">b_c2_voicingvoiced:languagePolish</span><span class="st">`</span></span>
+<span id="cb17-5"><a></a>  ) <span class="sc">|&gt;</span> </span>
+<span id="cb17-6"><a></a>  <span class="fu">select</span>(ve_it, ve_pl) <span class="sc">|&gt;</span> </span>
+<span id="cb17-7"><a></a>  <span class="fu">pivot_longer</span>(ve_it<span class="sc">:</span>ve_pl, <span class="at">names_to =</span> <span class="st">"effect"</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb17-8"><a></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="fu">exp</span>(value), effect)) <span class="sc">+</span></span>
+<span id="cb17-9"><a></a>  <span class="fu">geom_vline</span>(<span class="at">xintercept =</span> <span class="dv">1</span>) <span class="sc">+</span></span>
+<span id="cb17-10"><a></a>  <span class="fu">stat_halfeye</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 
 </div>
 <img data-src="slides_files/figure-revealjs/vdur-2-sdraws-plot-1.png" class="quarto-figure quarto-figure-center r-stretch" width="960"></section>
+<section id="group-level-differences-intercept" class="slide level2">
+<h2>Group-level differences: <code>Intercept</code></h2>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a></a>vdur_2 <span class="sc">|&gt;</span> </span>
+<span id="cb18-2"><a></a>  <span class="fu">gather_draws</span>(r_speaker[speaker,term]) <span class="sc">|&gt;</span> </span>
+<span id="cb18-3"><a></a>  <span class="fu">filter</span>(term <span class="sc">==</span> <span class="st">"Intercept"</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb18-4"><a></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(.value, <span class="fu">reorder</span>(<span class="fu">as.factor</span>(speaker), .value))) <span class="sc">+</span></span>
+<span id="cb18-5"><a></a>  <span class="fu">geom_vline</span>(<span class="at">xintercept =</span> <span class="dv">0</span>, <span class="at">linetype =</span> <span class="st">"dashed"</span>) <span class="sc">+</span></span>
+<span id="cb18-6"><a></a>  <span class="fu">stat_halfeye</span>() <span class="sc">+</span></span>
+<span id="cb18-7"><a></a>  <span class="fu">labs</span>(</span>
+<span id="cb18-8"><a></a>    <span class="at">x =</span> <span class="st">"Group-level differences of Intercept"</span>,</span>
+<span id="cb18-9"><a></a>    <span class="at">y =</span> <span class="st">"Speaker"</span></span>
+<span id="cb18-10"><a></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+
+</div>
+<img data-src="slides_files/figure-revealjs/vdur-2-diffs-1.png" class="quarto-figure quarto-figure-center r-stretch" width="960"></section>
 <section id="voicing-effect-by-speaker" class="slide level2">
 <h2>Voicing effect by speaker</h2>
 <div class="cell" data-layout-align="center">
-<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a></a>duration <span class="sc">|&gt;</span> </span>
-<span id="cb20-2"><a></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(c2_voicing, v1_duration, <span class="at">colour =</span> language)) <span class="sc">+</span></span>
-<span id="cb20-3"><a></a>  <span class="fu">geom_jitter</span>(<span class="at">alpha =</span> <span class="fl">0.2</span>, <span class="at">width =</span> <span class="fl">0.1</span>) <span class="sc">+</span></span>
-<span id="cb20-4"><a></a>  <span class="fu">facet_wrap</span>(<span class="fu">vars</span>(speaker), <span class="at">ncol =</span> <span class="dv">6</span>) <span class="sc">+</span></span>
-<span id="cb20-5"><a></a>  <span class="fu">scale_colour_brewer</span>(<span class="at">type =</span> <span class="st">"qual"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a></a>duration <span class="sc">|&gt;</span> </span>
+<span id="cb19-2"><a></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(c2_voicing, v1_duration, <span class="at">colour =</span> language)) <span class="sc">+</span></span>
+<span id="cb19-3"><a></a>  <span class="fu">geom_jitter</span>(<span class="at">alpha =</span> <span class="fl">0.2</span>, <span class="at">width =</span> <span class="fl">0.1</span>) <span class="sc">+</span></span>
+<span id="cb19-4"><a></a>  <span class="fu">facet_wrap</span>(<span class="fu">vars</span>(speaker), <span class="at">ncol =</span> <span class="dv">6</span>) <span class="sc">+</span></span>
+<span id="cb19-5"><a></a>  <span class="fu">scale_colour_brewer</span>(<span class="at">type =</span> <span class="st">"qual"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 
 </div>
 <img data-src="slides_files/figure-revealjs/speakers-ve-1.png" class="quarto-figure quarto-figure-center r-stretch" width="960"></section>
-<section id="multilevel-intercepts-and-slopes" class="slide level2">
-<h2>Multilevel intercepts and slopes</h2>
+<section id="section-3" class="slide level2">
+<h2></h2>
+<iframe allowfullscreen="" frameborder="0" height="100%" mozallowfullscreen="" style="min-width: 500px; min-height: 355px" src="https://app.wooclap.com/events/DTZXHC/questions/6645d57246e62b6268956c22" width="100%">
+</iframe>
+</section>
+<section id="group-level-intercepts-and-slopes" class="slide level2">
+<h2>Group-level intercepts and slopes</h2>
 <div class="cell" data-layout-align="center">
-<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a></a>vdur_3 <span class="ot">&lt;-</span> <span class="fu">brm</span>(</span>
-<span id="cb21-2"><a></a>  v1_duration <span class="sc">~</span></span>
-<span id="cb21-3"><a></a>    c2_voicing <span class="sc">*</span> vowel <span class="sc">*</span> language <span class="sc">+</span></span>
-<span id="cb21-4"><a></a>    (c2_voicing <span class="sc">*</span> vowel <span class="sc">|</span> speaker),</span>
-<span id="cb21-5"><a></a>  <span class="at">data =</span> duration,</span>
-<span id="cb21-6"><a></a>  <span class="at">family =</span> lognormal,</span>
-<span id="cb21-7"><a></a>  <span class="at">seed =</span> my_seed,</span>
-<span id="cb21-8"><a></a>  <span class="at">cores =</span> <span class="dv">4</span>,</span>
-<span id="cb21-9"><a></a>  <span class="at">file =</span> <span class="st">"data/cache/vdur_3"</span></span>
-<span id="cb21-10"><a></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a></a>vdur_3 <span class="ot">&lt;-</span> <span class="fu">brm</span>(</span>
+<span id="cb20-2"><a></a>  v1_duration <span class="sc">~</span></span>
+<span id="cb20-3"><a></a>    c2_voicing <span class="sc">*</span> vowel <span class="sc">*</span> language <span class="sc">+</span></span>
+<span id="cb20-4"><a></a>    (c2_voicing <span class="sc">*</span> vowel <span class="sc">|</span> speaker),</span>
+<span id="cb20-5"><a></a>  <span class="at">data =</span> duration,</span>
+<span id="cb20-6"><a></a>  <span class="at">family =</span> lognormal,</span>
+<span id="cb20-7"><a></a>  <span class="at">seed =</span> my_seed,</span>
+<span id="cb20-8"><a></a>  <span class="at">cores =</span> <span class="dv">4</span>,</span>
+<span id="cb20-9"><a></a>  <span class="at">file =</span> <span class="st">"data/cache/vdur_3"</span></span>
+<span id="cb20-10"><a></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="box-tip">
+<p>Group-level <strong>slopes</strong> must be variables that are <strong>within-grouping</strong>:</p>
+<ul>
+<li><p><code>c2_voicing</code> and <code>vowel</code> are within-speaker so they can and should be included as group-level slopes.</p></li>
+<li><p><code>language</code> is between-speaker (each speaker is a speaker of either Italian or Polish).</p></li>
+</ul>
+<p>Whether a variable is within- or between-grouping depends on the study design although some variables are most likely between-grouping (gender, socio-economic status, education…).</p>
 </div>
 </section>
+<section id="group-level-differences-intercept-1" class="slide level2">
+<h2>Group-level differences: <code>Intercept</code></h2>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a></a>vdur_3 <span class="sc">|&gt;</span> </span>
+<span id="cb21-2"><a></a>  <span class="fu">gather_draws</span>(r_speaker[speaker,term]) <span class="sc">|&gt;</span> </span>
+<span id="cb21-3"><a></a>  <span class="fu">filter</span>(term <span class="sc">==</span> <span class="st">"Intercept"</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb21-4"><a></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(.value, <span class="fu">reorder</span>(<span class="fu">as.factor</span>(speaker), .value))) <span class="sc">+</span></span>
+<span id="cb21-5"><a></a>  <span class="fu">geom_vline</span>(<span class="at">xintercept =</span> <span class="dv">0</span>, <span class="at">linetype =</span> <span class="st">"dashed"</span>) <span class="sc">+</span></span>
+<span id="cb21-6"><a></a>  <span class="fu">stat_halfeye</span>() <span class="sc">+</span></span>
+<span id="cb21-7"><a></a>  <span class="fu">labs</span>(</span>
+<span id="cb21-8"><a></a>    <span class="at">x =</span> <span class="st">"Group-level differences of Intercept"</span>,</span>
+<span id="cb21-9"><a></a>    <span class="at">y =</span> <span class="st">"Speaker"</span></span>
+<span id="cb21-10"><a></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+
+</div>
+<img data-src="slides_files/figure-revealjs/vdur-3-diffs-int-1.png" class="quarto-figure quarto-figure-center r-stretch" width="960"></section>
+<section id="group-level-differences-c2_voicing" class="slide level2">
+<h2>Group-level differences: <code>c2_voicing</code></h2>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a></a>vdur_3 <span class="sc">|&gt;</span> </span>
+<span id="cb22-2"><a></a>  <span class="fu">gather_draws</span>(r_speaker[speaker,term]) <span class="sc">|&gt;</span> </span>
+<span id="cb22-3"><a></a>  <span class="fu">filter</span>(term <span class="sc">==</span> <span class="st">"c2_voicingvoiced"</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb22-4"><a></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(.value, <span class="fu">reorder</span>(<span class="fu">as.factor</span>(speaker), .value))) <span class="sc">+</span></span>
+<span id="cb22-5"><a></a>  <span class="fu">geom_vline</span>(<span class="at">xintercept =</span> <span class="dv">0</span>, <span class="at">linetype =</span> <span class="st">"dashed"</span>) <span class="sc">+</span></span>
+<span id="cb22-6"><a></a>  <span class="fu">stat_halfeye</span>() <span class="sc">+</span></span>
+<span id="cb22-7"><a></a>  <span class="fu">labs</span>(</span>
+<span id="cb22-8"><a></a>    <span class="at">x =</span> <span class="st">"Group-level differences of c2_voicing"</span>,</span>
+<span id="cb22-9"><a></a>    <span class="at">y =</span> <span class="st">"Speaker"</span></span>
+<span id="cb22-10"><a></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+
+</div>
+<img data-src="slides_files/figure-revealjs/vdur-3-diffs-voic-1.png" class="quarto-figure quarto-figure-center r-stretch" width="960"></section>
 <section id="conditional-predictions-of-vowel-duration-2" class="slide level2">
 <h2>Conditional predictions of vowel duration</h2>
 <div class="cell" data-layout-align="center">
-<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a></a><span class="fu">conditional_effects</span>(vdur_3, <span class="st">"vowel:c2_voicing"</span>, <span class="at">conditions =</span> <span class="fu">make_conditions</span>(vdur_3, <span class="st">"language"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a></a><span class="fu">conditional_effects</span>(vdur_3, <span class="st">"vowel:c2_voicing"</span>, <span class="at">conditions =</span> <span class="fu">make_conditions</span>(vdur_3, <span class="st">"language"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 
 </div>
 <img data-src="slides_files/figure-revealjs/vdur-3-cond-1.png" class="quarto-figure quarto-figure-center r-stretch" width="960"></section>
 <section id="posterior-probability-of-voicing-effect" class="slide level2">
 <h2>Posterior probability of voicing effect</h2>
 <div class="cell" data-layout-align="center">
-<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a></a>vdur_3_sdraws <span class="sc">|&gt;</span></span>
-<span id="cb23-2"><a></a>  <span class="fu">mutate</span>(</span>
-<span id="cb23-3"><a></a>    <span class="at">ve_it =</span> b_c2_voicingvoiced,</span>
-<span id="cb23-4"><a></a>    <span class="at">ve_pl =</span> b_c2_voicingvoiced <span class="sc">+</span> <span class="st">`</span><span class="at">b_c2_voicingvoiced:languagePolish</span><span class="st">`</span></span>
-<span id="cb23-5"><a></a>  ) <span class="sc">|&gt;</span> </span>
-<span id="cb23-6"><a></a>  <span class="fu">select</span>(ve_it, ve_pl) <span class="sc">|&gt;</span> </span>
-<span id="cb23-7"><a></a>  <span class="fu">pivot_longer</span>(ve_it<span class="sc">:</span>ve_pl, <span class="at">names_to =</span> <span class="st">"effect"</span>) <span class="sc">|&gt;</span> </span>
-<span id="cb23-8"><a></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="fu">exp</span>(value), effect)) <span class="sc">+</span></span>
-<span id="cb23-9"><a></a>  <span class="fu">geom_vline</span>(<span class="at">xintercept =</span> <span class="dv">1</span>) <span class="sc">+</span></span>
-<span id="cb23-10"><a></a>  <span class="fu">stat_halfeye</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a></a>vdur_3_sdraws <span class="sc">|&gt;</span></span>
+<span id="cb24-2"><a></a>  <span class="fu">mutate</span>(</span>
+<span id="cb24-3"><a></a>    <span class="at">ve_it =</span> b_c2_voicingvoiced,</span>
+<span id="cb24-4"><a></a>    <span class="at">ve_pl =</span> b_c2_voicingvoiced <span class="sc">+</span> <span class="st">`</span><span class="at">b_c2_voicingvoiced:languagePolish</span><span class="st">`</span></span>
+<span id="cb24-5"><a></a>  ) <span class="sc">|&gt;</span> </span>
+<span id="cb24-6"><a></a>  <span class="fu">select</span>(ve_it, ve_pl) <span class="sc">|&gt;</span> </span>
+<span id="cb24-7"><a></a>  <span class="fu">pivot_longer</span>(ve_it<span class="sc">:</span>ve_pl, <span class="at">names_to =</span> <span class="st">"effect"</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb24-8"><a></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="fu">exp</span>(value), effect)) <span class="sc">+</span></span>
+<span id="cb24-9"><a></a>  <span class="fu">geom_vline</span>(<span class="at">xintercept =</span> <span class="dv">1</span>) <span class="sc">+</span></span>
+<span id="cb24-10"><a></a>  <span class="fu">stat_halfeye</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 
 </div>
 <img data-src="slides_files/figure-revealjs/vdur-3-sdraws-plot-1.png" class="quarto-figure quarto-figure-center r-stretch" width="960"></section>
-<section id="group-level-differences" class="slide level2">
-<h2>Group-level differences</h2>
-<div class="cell" data-layout-align="center">
-<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a></a>vdur_3 <span class="sc">|&gt;</span> </span>
-<span id="cb24-2"><a></a>  <span class="fu">gather_draws</span>(r_speaker[speaker,term]) <span class="sc">|&gt;</span> </span>
-<span id="cb24-3"><a></a>  <span class="fu">filter</span>(term <span class="sc">==</span> <span class="st">"Intercept"</span>) <span class="sc">|&gt;</span> </span>
-<span id="cb24-4"><a></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(.value, <span class="fu">reorder</span>(<span class="fu">as.factor</span>(speaker), .value))) <span class="sc">+</span></span>
-<span id="cb24-5"><a></a>  <span class="fu">geom_vline</span>(<span class="at">xintercept =</span> <span class="dv">0</span>, <span class="at">linetype =</span> <span class="st">"dashed"</span>) <span class="sc">+</span></span>
-<span id="cb24-6"><a></a>  <span class="fu">stat_halfeye</span>() <span class="sc">+</span></span>
-<span id="cb24-7"><a></a>  <span class="fu">labs</span>(</span>
-<span id="cb24-8"><a></a>    <span class="at">x =</span> <span class="st">"Group-level differences"</span>,</span>
-<span id="cb24-9"><a></a>    <span class="at">y =</span> <span class="st">"Speaker"</span></span>
-<span id="cb24-10"><a></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-
-</div>
-<img data-src="slides_files/figure-revealjs/unnamed-chunk-23-1.png" class="quarto-figure quarto-figure-center r-stretch" width="960"></section>
 <section id="partial-pooling-and-shrinkage" class="slide level2">
 <h2>Partial pooling and shrinkage</h2>
 <div class="box-note">
@@ -840,8 +881,23 @@ scale reduction factor on split chains (at convergence, Rhat = 1).</code></pre>
 <section id="shrinkage" class="slide level2">
 <h2>Shrinkage</h2>
 
+<img data-src="slides_files/figure-revealjs/shrink-1.png" class="quarto-figure quarto-figure-center r-stretch" width="960"></section>
+<section id="section-4" class="slide level2">
+<h2></h2>
+<iframe allowfullscreen="" frameborder="0" height="100%" mozallowfullscreen="" style="min-width: 500px; min-height: 355px" src="https://app.wooclap.com/events/DTZXHC/questions/6645da109868d5b13c73564a" width="100%">
+</iframe>
+</section>
+<section id="summary" class="slide level2">
+<h2>Summary</h2>
+<div class="box-note">
+<ul>
+<li><p>Group-level terms allow the model to account for grouping in the data not accounted for by the population-level terms.</p></li>
+<li><p>It is important to include group-level terms. Failure to do so will lead to over-confident estimates that won’t replicate.</p></li>
+<li><p>Both group-level intercept and slopes should be included (including interactions!).</p></li>
+</ul>
+</div>
 
-<img data-src="slides_files/figure-revealjs/shrink-1.png" class="quarto-figure quarto-figure-center r-stretch" width="960"><div class="quarto-auto-generated-content">
+<div class="quarto-auto-generated-content">
 <div class="footer footer-default">
 
 </div>

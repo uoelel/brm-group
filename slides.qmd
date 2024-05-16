@@ -21,6 +21,7 @@ knitr:
 library(tidyverse)
 library(brms)
 library(tidybayes)
+theme_set(theme_light())
 
 options(ggplot2.discrete.fill = RColorBrewer::brewer.pal(8, "Dark2"))
 options(ggplot2.discrete.colour = RColorBrewer::brewer.pal(8, "Dark2"))
@@ -34,7 +35,9 @@ my_seed <- 8293
 
 - Data from my PhD dissertation.
 
-- Effect of consonant voicing on the duration of preceding vowels in Italian and Polish.
+  - **Voicing effect**: vowels tend to be longer when followed by voiced consonants and shorter when followed by voiceless consonants.
+
+- Effect of stop voicing on the duration of preceding vowels in Italian and Polish.
 
 - /pVCV/ words in frame sentence.
 
@@ -43,7 +46,7 @@ my_seed <- 8293
 
 :::
 
-## Coretta 2018: data
+## Read the data
 
 ```{r}
 #| label: duration
@@ -61,8 +64,13 @@ duration <- read_csv("data/coretta2018/token-measures.csv") |>
   drop_na(v1_duration)
 
 contrasts(duration$vowel) <- "contr.sum"
+```
 
-duration
+## The tibble `duration`
+
+```{r}
+#| label: duration-print
+duration |> select(speaker, word, vowel, c2_voicing, v1_duration)
 ```
 
 
@@ -70,6 +78,7 @@ duration
 
 ```{r}
 #| label: vdur-plot
+#| echo: false
 
 duration |> 
   ggplot(aes(c2_voicing, v1_duration)) +
@@ -83,6 +92,7 @@ duration |>
 
 ```{r}
 #| label: vdur-plot-2
+#| echo: false
 
 duration |> 
   ggplot(aes(c2_voicing, v1_duration)) +
@@ -137,11 +147,6 @@ conditional_effects(vdur_1, "vowel:c2_voicing", conditions = make_conditions(vdu
 
 vdur_1_gdraws <- vdur_1 |>
   gather_draws(`b_.*`, regex = TRUE)
-```
-
-
-```{r}
-#| label: vdur-1-gdraws-plot
 
 vdur_1_gdraws |> 
   filter(.variable != "b_Intercept") |>
@@ -151,17 +156,20 @@ vdur_1_gdraws |>
   theme(legend.position = "none")
 ```
 
-## Posterior probability distributions of effect of voicing
+## Spread draws
 
 ```{r}
 #| label: vdur-1-sdraws
 #| echo: true
 
+# libary(tidybayes)
 vdur_1_sdraws <- vdur_1 |>
   spread_draws(`b_.*`, regex = TRUE)
 
 vdur_1_sdraws
 ```
+
+## Posterior probability distributions of effect of voicing
 
 ```{r}
 #| label: vdur-1-sdraws-plot
@@ -185,7 +193,7 @@ vdur_1_sdraws |>
 
 duration |> 
   ggplot(aes("", v1_duration, colour = language)) +
-  geom_jitter(alpha = 0.2, width = 0.1) +
+  geom_jitter(alpha = 0.5, width = 0.1) +
   facet_wrap(vars(speaker), ncol = 6) +
   scale_colour_brewer(type = "qual")
 ```
@@ -221,7 +229,11 @@ duration |>
   - Note that some variables could be entered as group-level effects in some cases but not others. It depends on the study design.
 :::
 
-## Group-level/multilevel intercepts
+##
+
+<iframe allowfullscreen frameborder="0" height="100%" mozallowfullscreen style="min-width: 500px; min-height: 355px" src="https://app.wooclap.com/events/DTZXHC/questions/6645d7cd9868d5b13c717487" width="100%"></iframe>
+
+## Group-level intercepts
 
 ```{r}
 #| label: vdur-2
@@ -238,7 +250,11 @@ vdur_2 <- brm(
 )
 ```
 
-## Group-level/multilevel intercepts: summary
+##
+
+
+
+## Group-level intercepts: summary
 
 ```{r}
 #| label: vdur-2-summ
@@ -279,6 +295,23 @@ vdur_2_sdraws |>
   stat_halfeye()
 ```
 
+## Group-level differences: `Intercept`
+
+```{r}
+#| label: vdur-2-diffs
+
+vdur_2 |> 
+  gather_draws(r_speaker[speaker,term]) |> 
+  filter(term == "Intercept") |> 
+  ggplot(aes(.value, reorder(as.factor(speaker), .value))) +
+  geom_vline(xintercept = 0, linetype = "dashed") +
+  stat_halfeye() +
+  labs(
+    x = "Group-level differences of Intercept",
+    y = "Speaker"
+  )
+```
+
 ## Voicing effect by speaker
 
 ```{r}
@@ -291,7 +324,11 @@ duration |>
   scale_colour_brewer(type = "qual")
 ```
 
-## Multilevel intercepts and slopes
+##
+
+<iframe allowfullscreen frameborder="0" height="100%" mozallowfullscreen style="min-width: 500px; min-height: 355px" src="https://app.wooclap.com/events/DTZXHC/questions/6645d57246e62b6268956c22" width="100%"></iframe>
+
+## Group-level intercepts and slopes
 
 ```{r}
 #| label: vdur-3
@@ -306,6 +343,52 @@ vdur_3 <- brm(
   cores = 4,
   file = "data/cache/vdur_3"
 )
+```
+
+::: box-tip
+
+Group-level **slopes** must be variables that are **within-grouping**:
+
+- `c2_voicing` and `vowel` are within-speaker so they can and should be included as group-level slopes.
+
+- `language` is between-speaker (each speaker is a speaker of either Italian or Polish).
+
+Whether a variable is within- or between-grouping depends on the study design although some variables are most likely between-grouping (gender, socio-economic status, education...).
+
+:::
+
+## Group-level differences: `Intercept`
+
+```{r}
+#| label: vdur-3-diffs-int
+
+vdur_3 |> 
+  gather_draws(r_speaker[speaker,term]) |> 
+  filter(term == "Intercept") |> 
+  ggplot(aes(.value, reorder(as.factor(speaker), .value))) +
+  geom_vline(xintercept = 0, linetype = "dashed") +
+  stat_halfeye() +
+  labs(
+    x = "Group-level differences of Intercept",
+    y = "Speaker"
+  )
+```
+
+## Group-level differences: `c2_voicing` 
+
+```{r}
+#| label: vdur-3-diffs-voic
+
+vdur_3 |> 
+  gather_draws(r_speaker[speaker,term]) |> 
+  filter(term == "c2_voicingvoiced") |> 
+  ggplot(aes(.value, reorder(as.factor(speaker), .value))) +
+  geom_vline(xintercept = 0, linetype = "dashed") +
+  stat_halfeye() +
+  labs(
+    x = "Group-level differences of c2_voicing",
+    y = "Speaker"
+  )
 ```
 
 ## Conditional predictions of vowel duration
@@ -339,21 +422,6 @@ vdur_3_sdraws |>
   ggplot(aes(exp(value), effect)) +
   geom_vline(xintercept = 1) +
   stat_halfeye()
-```
-
-## Group-level differences 
-
-```{r}
-vdur_3 |> 
-  gather_draws(r_speaker[speaker,term]) |> 
-  filter(term == "Intercept") |> 
-  ggplot(aes(.value, reorder(as.factor(speaker), .value))) +
-  geom_vline(xintercept = 0, linetype = "dashed") +
-  stat_halfeye() +
-  labs(
-    x = "Group-level differences",
-    y = "Speaker"
-  )
 ```
 
 ## Partial pooling and shrinkage
@@ -408,3 +476,18 @@ vdur_3_epred |>
   )
 ```
 
+##
+
+<iframe allowfullscreen frameborder="0" height="100%" mozallowfullscreen style="min-width: 500px; min-height: 355px" src="https://app.wooclap.com/events/DTZXHC/questions/6645da109868d5b13c73564a" width="100%"></iframe>
+
+## Summary
+
+::: box-note
+
+- Group-level terms allow the model to account for grouping in the data not accounted for by the population-level terms.
+
+- It is important to include group-level terms. Failure to do so will lead to over-confident estimates that won't replicate.
+
+- Both group-level intercept and slopes should be included (including interactions!).
+
+:::
